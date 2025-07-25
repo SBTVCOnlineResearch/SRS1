@@ -49,6 +49,7 @@ function updateStatistics() {
 
 async function loadResearchDataFromGoogleSheet() {
     showMessage(statusMessageDiv, 'กำลังดึงข้อมูลจาก Google Sheet...', 'info');
+    showLoadingSpinner(true);
     try {
         const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?sheet=${PENDING_RESEARCH_SHEET_NAME}`);
         const data = await response.json();
@@ -76,6 +77,7 @@ async function loadResearchDataFromGoogleSheet() {
         showMessage(statusMessageDiv, 'เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
     } finally {
         updateStatistics();
+        showLoadingSpinner(false);
         setTimeout(() => hideMessage(statusMessageDiv), 3000);
     }
 }
@@ -128,18 +130,53 @@ async function updateResearchStatus(id, newStatus) {
         showMessage(statusMessageDiv, 'เกิดข้อผิดพลาดในการเชื่อมต่อเพื่ออัปเดตสถานะ', 'error');
     } finally {
         updateStatistics();
-        setTimeout(() => hideMessage(statusMessageDiv), 3000);
         showLoadingSpinner(false);
+        setTimeout(() => hideMessage(statusMessageDiv), 3000);
+    }
+}
+
+async function deleteResearch(id) {
+    if (!confirm(`คุณแน่ใจหรือไม่ที่ต้องการลบงานวิจัย ID: ${id} นี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return;
+
+    showMessage(statusMessageDiv, `กำลังลบงานวิจัย ID: ${id}...`, 'info');
+    showLoadingSpinner(true);
+
+    try {
+        const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id: id })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            const cardElement = document.getElementById(`card-${id}`);
+            if (cardElement) cardElement.remove();
+            researches = researches.filter(r => String(r.Id) !== String(id));
+            showMessage(statusMessageDiv, result.message, 'success');
+        } else {
+            showMessage(statusMessageDiv, `ลบงานวิจัยล้มเหลว: ${result.message}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting research:', error);
+        showMessage(statusMessageDiv, 'เกิดข้อผิดพลาดในการลบ', 'error');
+    } finally {
+        updateStatistics();
+        showLoadingSpinner(false);
+        setTimeout(() => hideMessage(statusMessageDiv), 3000);
     }
 }
 
 async function exportResults() {
     showMessage(statusMessageDiv, 'กำลังส่งออกข้อมูลที่ได้รับอนุมัติ...', 'info');
+    showLoadingSpinner(true);
 
-    const approvedDataToExport = researches.filter(r => r.Status === 'Approved' && !r.Pass);
+    const approvedDataToExport = researches.filter(r => r.Status === 'Approved' && (!r.passe || r.passe !== 'pass'));
 
     if (approvedDataToExport.length === 0) {
         showMessage(statusMessageDiv, 'ไม่มีรายการที่พร้อมส่งออก (ต้องเป็น Approved และยังไม่ส่ง)', 'info');
+        showLoadingSpinner(false);
         return;
     }
 
@@ -157,14 +194,15 @@ async function exportResults() {
             const errorText = await response.text();
             console.error('HTTP Error during export:', response.status, errorText);
             showMessage(statusMessageDiv, `เกิดข้อผิดพลาด HTTP: ${response.status}`, 'error');
+            showLoadingSpinner(false);
             return;
         }
 
         const result = await response.json();
 
-        if (result.status === 'success' && Array.isArray(result.exportedIds)) {
-            const exportedIds = result.exportedIds;
-
+        if (result.status === 'success' && Array.isArray(result.data)) {
+            const exportedIds = result.data.map(row => row[PENDING_HEADERS_MAP.Id] || row[4]); // หรือ ดึง index ตามที่เหมาะสม
+            // ลบไพ่ที่ส่งออกแล้วในหน้า frontend
             exportedIds.forEach(id => {
                 const card = document.getElementById(`card-${id}`);
                 if (card) card.remove();
@@ -180,6 +218,7 @@ async function exportResults() {
         showMessage(statusMessageDiv, 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
     } finally {
         updateStatistics();
+        showLoadingSpinner(false);
         setTimeout(() => hideMessage(statusMessageDiv), 4000);
     }
 }
@@ -278,38 +317,6 @@ function createResearchCard(researchData, displayId) {
         </div>
     `;
     return card;
-}
-
-async function deleteResearch(id) {
-    if (!confirm(`คุณแน่ใจหรือไม่ที่ต้องการลบงานวิจัย ID: ${id} นี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return;
-
-    showMessage(statusMessageDiv, `กำลังลบงานวิจัย ID: ${id}...`, 'info');
-    showLoadingSpinner(true);
-
-    try {
-        const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'delete', id: id })
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'success') {
-            const cardElement = document.getElementById(`card-${id}`);
-            if (cardElement) cardElement.remove();
-            researches = researches.filter(r => String(r.Id) !== String(id));
-            showMessage(statusMessageDiv, result.message, 'success');
-        } else {
-            showMessage(statusMessageDiv, `ลบงานวิจัยล้มเหลว: ${result.message}`, 'error');
-        }
-    } catch (error) {
-        showMessage(statusMessageDiv, 'เกิดข้อผิดพลาดในการลบ', 'error');
-    } finally {
-        updateStatistics();
-        setTimeout(() => hideMessage(statusMessageDiv), 3000);
-        showLoadingSpinner(false);
-    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
