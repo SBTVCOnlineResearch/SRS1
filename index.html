@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta name="google-site-verification" content="B4grT7s_R1qrFTOC99J3Eog2AsfSQ216CbTPTs1jOUs" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBTVC Online Research</title>
+    <meta name="description" content="เว็บไซต์สำหรับจัดเก็บและนำเสนอผลงานวิจัยของวิทยาลัยอาชีวศึกษาเทคโนโลยีฐานวิทยาศาสตร์ (ชลบุรั)SBTVC ">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f7f7f7;
+        }
+        .orange-primary {
+            color: #c73e14; /* สีส้มหลัก */
+        }
+        .bg-orange-primary {
+            background-color: #FF5722;
+        }
+        .hover\:bg-orange-secondary:hover {
+            background-color: #ee400c; /* สีส้มเข้มขึ้นเมื่อ hover */
+        }
+        .border-orange-primary {
+            border-color: #FF5722;
+        }
+        .hover\:bg-orange-light:hover {
+            background-color: #997367; /* สีส้มอ่อนเมื่อ hover */
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 10;
+            right: 0; /* จัดให้ dropdown ชิดขวา */
+            border-radius: 0.375rem; /* rounded-md */
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            pointer-events: none; /* ไม่ให้คลิกได้ถ้ายังไม่แสดง */
+        }
+        .dropdown:hover .dropdown-content,
+        .dropdown.active .dropdown-content { /* เพิ่ม .active สำหรับการควบคุมด้วย JS */
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .dropdown-content a, .dropdown-content button {
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+        .dropdown-content a:hover, .dropdown-content button:hover {
+            background-color: #f1f1f1;
+        }
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 30px;
+            font-size: 17px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .toast.show {
+            visibility: visible;
+            -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        .toast.success { background-color: #4CAF50; }
+        .toast.error { background-color: #F44336; }
+        .toast.info { background-color: #2196F3; }
+
+        @-webkit-keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+        @-webkit-keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+
+        /* Modal Styles */
+        .modal {
+            transition: opacity 0.3s ease-out;
+        }
+        .modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .modal-content {
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-out;
+        }
+        .modal.opacity-100 .modal-content {
+            transform: translateY(0);
+        }
+        
+        /* Research Card styles for consistent height */
+        .research-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* Ensure all cards in a row have same height */
+            transition: transform 0.2s ease-in-out;
+        }
+        .research-card:hover {
+            transform: translateY(-5px);
+        }
+        .research-card .image-container {
+            width: 100%;
+            height: 200px; /* Fixed height for images */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0; /* Placeholder background */
+        }
+        .research-card .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Cover the area, may crop */
+        }
+        .research-card-content {
+            flex-grow: 1; /* Allow content area to expand */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Push button to bottom */
+            padding: 1rem;
+        }
+        .research-card-content h3 {
+            min-height: 3rem; /* Ensure title has enough space */
+        }
+        .research-card-content .flex-grow-1 {
+            flex-grow: 1; /* Ensures buttons align at bottom if needed */
+        }
+        
+        /* Adjust for smaller screens */
+        @media (max-width: 768px) {
+            .hero-content h2 {
+                font-size: 2rem;
+            }
+            .hero-content p {
+                font-size: 0.9rem;
+            }
+            .research-card .image-container {
+                height: 150px; /* Smaller image height on mobile */
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <div id="toast" class="toast"></div>
+
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://res.cloudinary.com/djbbchijx/image/upload/v1750912014/sbtvc-logo_om98ni.png" alt="โลโก้ SBTVC" class="h-12 w-12 object-contain mr-3" />
+                <h1 class="text-2xl font-bold text-gray-800">
+                    SBTVC <span class="orange-primary">Online Research</span>
+                </h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="index.html" class="text-gray-700 hover:text-orange-primary font-medium">หน้าหลัก</a>
+                <a href="Category/Category.html" class="text-gray-700 hover:text-orange-primary font-medium">หมวดหมู่</a>
+                <a href="upload.html" id="upload-link-desktop" class="hidden text-gray-700 hover:text-orange-primary font-medium">
+                    <i class="fas fa-upload mr-1"></i> อัปโหลดงานวิจัย
+                </a>
+            </div>
+            <div id="auth-buttons" class="flex items-center space-x-3">
+                <button onclick="openModal('loginModal')" class="px-4 py-2 border border-orange-primary text-orange-primary rounded-md hover:bg-orange-light transition">เข้าสู่ระบบ</button>
+                <button onclick="openModal('registerModal')" class="px-4 py-2 bg-orange-primary text-white rounded-md hover:bg-orange-secondary transition">สมัครสมาชิก</button>
+                <button class="md:hidden text-gray-700" id="menuButton">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+            <div id="user-profile" class="hidden items-center space-x-3">
+                <div class="dropdown">
+                    <button class="flex items-center space-x-2 px-4 py-2 border border-orange-primary text-orange-primary rounded-md hover:bg-orange-light transition">
+                        <span id="username-display">ชื่อผู้ใช้</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div class="dropdown-content">
+                        <div class="p-4 border-b border-gray-200">
+                            <p class="text-sm text-gray-500">ยินดีต้อนรับ</p>
+                            <p id="fullname-display" class="font-medium text-gray-800">ชื่อ-นามสกุล</p>
+                            <p id="email-display" class="text-sm text-gray-500">อีเมล</p>
+                        </div>
+                        <a href="profile.html" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-user-circle mr-2"></i> โปรไฟล์ของฉัน
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-bookmark mr-2"></i> งานวิจัยที่บันทึกไว้
+                        </a>
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-cog mr-2"></i> ตั้งค่า
+                        </a>
+                        <button onclick="logout()" class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">
+                            <i class="fas fa-sign-out-alt mr-2"></i> ออกจากระบบ
+                        </button>
+                    </div>
+                </div>
+                <button class="md:hidden text-gray-700" id="menuButtonLoggedIn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="w-full bg-white text-center">
+            <img 
+                src="https://res.cloudinary.com/djbbchijx/image/upload/v1750912013/it_1_nlmagq.jpg" 
+                alt="แบนเนอร์เว็บไซต์" 
+                class="inline-block w-full max-w-8xl"
+            />
+        </div>
+
+        <div id="mobileMenu" class="hidden md:hidden bg-white px-4 py-2 shadow-md">
+            <a href="index.html" class="block py-2 text-gray-700 hover:text-orange-primary">หน้าหลัก</a>
+            <a href="Category/Category.html" class="block py-2 text-gray-700 hover:text-orange-primary">หมวดหมู่</a>
+            <a href="upload.html" id="upload-link-mobile" class="hidden block py-2 text-gray-700 hover:text-orange-primary">
+                <i class="fas fa-upload mr-1  text-black-800 "></i> อัปโหลดงานวิจัย
+            </a>
+            <div id="mobile-user-menu" class="hidden border-t border-gray-200 mt-2 pt-2">
+                <p class="py-2 font-medium text-gray-800">ยินดีต้อนรับ <span id="mobile-username-display">ชื่อผู้ใช้</span></p>
+                <a href="profile.html" class="block py-2 text-gray-700 hover:text-orange-primary">
+                    <i class="fas fa-user-circle mr-2"></i> โปรไฟล์ของฉัน
+                </a>
+                <a href="#" class="block py-2 text-gray-700 hover:text-orange-primary">
+                    <i class="fas fa-bookmark mr-2"></i> งานวิจัยที่บันทึกไว้
+                </a>
+                <a href="#" class="block py-2 text-gray-700 hover:text-orange-primary">
+                    <i class="fas fa-cog mr-2"></i> ตั้งค่า
+                </a>
+                <button onclick="logout()" class="block w-full text-left py-2 text-red-600 hover:text-red-700">
+                    <i class="fas fa-sign-out-alt mr-2"></i> ออกจากระบบ
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <section class="mb-12 text-center py-12 rounded-lg" style="background: linear-gradient(to right, #ff8a4c, #d03801);">
+            <div class="hero-content text-white">
+                <h2 class="text-4xl font-bold mb-4">ค้นพบงานวิจัยอันล้ำค่า</h2>
+                <p class="text-lg mb-6">แหล่งรวมผลงานวิจัยนวัตกรรมจากวิทยาลัยอาชีวศึกษาเทคโนโลยีฐานวิทยาศาสตร์</p>
+                <a href="upload.html" class="bg-gray-900    text-orange-primary font-semibold px-8 py-3 rounded-full  transition shadow-lg">
+                    <i class="fas fa-plus-circle mr-2"></i> ส่งผลงานวิจัยของคุณ
+                </a>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">ค้นหางานวิจัย</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <input type="text" id="searchInput" placeholder="ค้นหาด้วยชื่อเรื่อง, ผู้แต่ง, คำสำคัญ..." class="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-primary">
+                <select id="categorySelect" class="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-primary">
+                    <option value="">-- เลือกหมวดหมู่ --</option>
+                    <option value="วิทยาศาสตร์">วิทยาศาสตร์</option>
+                    <option value="เทคโนโลยี">เทคโนโลยี</option>
+                    <option value="วิศวกรรมศาสตร์">วิศวกรรมศาสตร์</option>
+                    <option value="คณิตศาสตร์">คณิตศาสตร์</option>
+                    <option value="เกษตรกรรม">เกษตรกรรม</option>
+                    <option value="อุตสาหกรรม">อุตสาหกรรม</option>
+                    <option value="บริหารธุรกิจ">บริหารธุรกิจ</option>
+                    <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+                <select id="yearSelect" class="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-primary">
+                    <option value="">-- เลือกปี --</option>
+                    <option value="2568">2568</option>
+                    <option value="2567">2567</option>
+                    <option value="2566">2566</option>
+                    <option value="2565">2565</option>
+                    <option value="2564">2564</option>
+                    <option value="2563">2563</option>
+                    <option value="2562">2562</option>
+                    <option value="2561">2561</option>
+                    <option value="2560">2560</option>
+                    <option value="2559">2559</option>
+                    <option value="2558">2558</option>
+                    <option value="2557">2557</option>
+                    <option value="2556">2556</option>
+                    <option value="2555">2555</option>
+                    <option value="2554">2554</option>
+                    <option value="2553">2553</option>
+                    <option value="2552">2552</option>
+                    <option value="2551">2551</option>
+                    </select>
+                <select id="levelSelect" class="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-primary">
+                    <option value="">-- เลือกระดับ --</option>
+                    <option value="ปวช.1">ปวช.1</option>
+                    <option value="ปวช.2">ปวช.2</option>
+                    <option value="ปวช.3">ปวช.3</option>
+                    <option value="ปวส.1">ปวส.1</option>
+                    <option value="ปวส.2">ปวส.2</option>
+                </select>
+            </div>
+            <div class="text-center mt-6">
+                <button id="searchButton" class="bg-orange-primary text-white px-6 py-3 rounded-md hover:bg-orange-secondary transition">
+                    <i class="fas fa-search mr-2"></i> ค้นหา
+                </button>
+            </div>
+        </section>
+
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">งานวิจัยยอดนิยม</h2>
+            <div id="featuredResearchContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <p id="noFeaturedResearchMessage" class="hidden text-center col-span-full text-gray-500">ไม่มีงานวิจัยแนะนำในขณะนี้</p>
+            </div>
+        </section>
+
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">งานวิจัยทั้งหมด</h2>
+            <div id="researchCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <p id="noResearchMessage" class="hidden text-center col-span-full text-gray-500">ไม่พบงานวิจัยที่ตรงกับเงื่อนไขการค้นหา</p>
+            </div>
+            <div id="loadingMessage" class="text-center py-8 text-gray-600 text-lg">
+                <i class="fas fa-spinner fa-spin mr-2"></i> กำลังโหลดงานวิจัย...
+            </div>
+        </section>
+
+         <!-- Card 1 -->
+  <div class="research-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
+       data-title="ระบบเว็บไซต์จัดเก็บผลงานวิจัย"
+       data-description="การจัดเก็บผลงานวิจัย วิทยาลัยอาชีวะศึกษาเทคโนโลยีฐานวิทยาศาสตร์"
+       data-category="สำรวจ"
+       data-year="2568"
+       data-level="ระดับวิลัย">
+    <a href="OnlineMMM.html">
+      <div class="h-40 overflow-hidden">
+        <img src="https://res.cloudinary.com/dbg4bygej/image/upload/v1752544289/e28f254b-24e5-431b-8ab5-f3d3e092cef3.png" alt="ภาพประกอบ" class="w-full h-full object-cover transition hover:opacity-90" />
+      </div>
+    </a>
+    <div class="p-6">
+      <div class="flex justify-between mb-2">
+        <span class="px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded-full">สำรวจ</span>
+        <span class="text-gray-500 text-sm">2568</span>
+      </div>
+      <h3 class="text-lg font-semibold mb-2">ระบบเว็บไซต์จัดเก็บผลงานวิจัย</h3>
+      <p class="text-gray-600 mb-4">การจัดเก็บผลงานวิจัย วิทยาลัยอาชีวะศึกษาเทคโนโลยีฐานวิทยาศาสตร์</p>
+      <div class="flex justify-between items-center">
+        <div class="flex items-center">
+          <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold">ส</div>
+          <span class="ml-2 text-gray-700">นายธนวิชญ์ จันทร์โชติ</span>
+        </div>
+        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">ระดับวิลัย</span>
+      </div>
+    </div>
+  </div>
+
+        <section class="mb-12 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">สำรวจตามหมวดหมู่</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <a href="Category/samruat.html" class="block p-4 text-center bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition">
+                    <i class="fas fa-flask text-2xl mb-2"></i>
+                    <p class="font-medium">สำรวจ</p>
+                </a>
+                <a href="Category/tidsadee.html" class="block p-4 text-center bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition">
+                    <i class="fas fa-microchip text-2xl mb-2"></i>
+                    <p class="font-medium">ทฤษฎี</p>
+                </a>
+                <a href="Category/todlong.html" class="block p-4 text-center bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition">
+                    <i class="fas fa-hard-hat text-2xl mb-2"></i>
+                    <p class="font-medium">ทดลอง</p>
+                </a>
+                <a href="Category/pradit.html" class="block p-4 text-center bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 transition">
+                    <i class="fas fa-calculator text-2xl mb-2"></i>
+                    <p class="font-medium">ประดิษฐ์</p>
+                </a>
+                
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 SBTVC Online Research. All rights reserved.</p>
+            <div class="flex justify-center space-x-4 mt-4">
+                <a href="https://www.facebook.com/sbtvc?locale=th_TH" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://www.youtube.com/@CHANNEL-rk9kq" class="text-gray-400 hover:text-white"><i class="fab fa-youtube"></i></a>
+                <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spotify Glow Hover</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom Glow Effect -->
+  <style>
+    .glow-hover:hover {
+      color: #1DB954; /* สีเขียว Spotify */
+      text-shadow: 0 0 8px #1DB954, 0 0 16px #1DB954;
+    }
+  </style>
+</head>
+<body class="flex justify-center items-center min-h-screen bg-white">
+
+  <a href="choose.html" class="text-gray-800 text-1xl glow-hover transition duration-300">
+    <i class="fab fa-spotify"></i>
+  </a>
+
+</body>
+</html>
+               
+            </div>
+        </div>
+    </footer>
+
+    <div id="loginModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden opacity-0">
+        <div class="modal-content bg-white p-8 rounded-lg shadow-xl w-11/12 md:w-1/3 relative">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">เข้าสู่ระบบ</h2>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label for="loginEmail" class="block text-gray-700 text-sm font-bold mb-2">อีเมล:</label>
+                    <input type="email" id="loginEmail" name="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-6">
+                    <label for="loginPassword" class="block text-gray-700 text-sm font-bold mb-2">รหัสผ่าน:</label>
+                    <input type="password" id="loginPassword" name="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="bg-orange-primary hover:bg-orange-secondary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">เข้าสู่ระบบ</button>
+                </div>
+                <p class="text-center text-gray-600 text-sm mt-4">
+                    ยังไม่มีบัญชี? 
+                    <button type="button" onclick="closeModal('loginModal'); openModal('registerModal');" class="text-orange-primary hover:underline font-bold">สมัครสมาชิก</button>
+                </p>
+            </form>
+            <button onclick="closeModal('loginModal')" class="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden opacity-0">
+        <div class="modal-content bg-white p-8 rounded-lg shadow-xl w-11/12 md:w-1/3 relative">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">สมัครสมาชิก</h2>
+            <form id="registerForm">
+                <div class="mb-4">
+                    <label for="regUsername" class="block text-gray-700 text-sm font-bold mb-2">ชื่อผู้ใช้:</label>
+                    <input type="text" id="regUsername" name="username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label for="regFullname" class="block text-gray-700 text-sm font-bold mb-2">ชื่อ-นามสกุล:</label>
+                    <input type="text" id="regFullname" name="fullname" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label for="regEmail" class="block text-gray-700 text-sm font-bold mb-2">อีเมล:</label>
+                    <input type="email" id="regEmail" name="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label for="regPassword" class="block text-gray-700 text-sm font-bold mb-2">รหัสผ่าน:</label>
+                    <input type="password" id="regPassword" name="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-6">
+                    <label for="regConfirmPassword" class="block text-gray-700 text-sm font-bold mb-2">ยืนยันรหัสผ่าน:</label>
+                    <input type="password" id="regConfirmPassword" name="confirmPassword" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="bg-orange-primary hover:bg-orange-secondary text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">สมัครสมาชิก</button>
+                </div>
+                <p class="text-center text-gray-600 text-sm mt-4">
+                    มีบัญชีอยู่แล้ว? 
+                    <button type="button" onclick="closeModal('registerModal'); openModal('loginModal');" class="text-orange-primary hover:underline font-bold">เข้าสู่ระบบ</button>
+                </p>
+            </form>
+            <button onclick="closeModal('registerModal')" class="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+        </div>
+    </div>
+
+    <script>
+        // *** START - Common JavaScript (previously common.js) ***
+
+        // *** IMPORTANT: Replace with your deployed Google Apps Script Web App URL ***
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby-QTyfdSXqxmqVNoql7uRkoRZuGCHlZOJA-atzZT4ZEnIiLE_92v6dEm6iR3hBOzkp/exec'; 
+        // Example: https://script.google.com/macros/s/AKfyc.../exec
+
+        // Function to show Toast Notifications
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.className = 'toast show ' + type;
+            toast.textContent = message;
+            setTimeout(() => {
+                toast.className = toast.className.replace('show', '');
+            }, 3000); // 3 seconds
+        }
+
+        // Modal Functions
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.add('opacity-100'), 10); // Add transition effect
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('opacity-100');
+                setTimeout(() => modal.classList.add('hidden'), 300); // Hide after transition
+            }
+        }
+
+        // Handle Login Form Submission
+        async function handleLogin(event) {
+            event.preventDefault();
+            const form = event.target;
+            const email = form.loginEmail.value;
+            const password = form.loginPassword.value;
+
+            try {
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'login',
+                        email: email,
+                        password: password
+                    }).toString()
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    localStorage.setItem('loggedInUser', JSON.stringify(result.user));
+                    closeModal('loginModal');
+                    checkLoginStatus(); // Update UI after login
+                    // Optionally redirect or refresh page
+                    // window.location.reload(); 
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('An error occurred during login. Please try again.', 'error');
+            }
+        }
+
+        // Handle Register Form Submission
+        async function handleRegister(event) {
+            event.preventDefault();
+            const form = event.target;
+            const username = form.regUsername.value;
+            const fullname = form.regFullname.value;
+            const email = form.regEmail.value;
+            const password = form.regPassword.value;
+            const confirmPassword = form.regConfirmPassword.value;
+
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match!', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'register',
+                        username: username,
+                        fullname: fullname,
+                        email: email,
+                        password: password
+                    }).toString()
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    closeModal('registerModal');
+                    openModal('loginModal'); // Open login modal after successful registration
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showToast('An error occurred during registration. Please try again.', 'error');
+            }
+        }
+
+        // Check Login Status and Update UI
+        function checkLoginStatus() {
+            const userProfileSection = document.getElementById('user-profile');
+            const authButtonsSection = document.getElementById('auth-buttons');
+            const usernameDisplay = document.getElementById('username-display');
+            const fullnameDisplay = document.getElementById('fullname-display');
+            const emailDisplay = document.getElementById('email-display');
+            const mobileUsernameDisplay = document.getElementById('mobile-username-display');
+            const mobileUserMenu = document.getElementById('mobile-user-menu');
+            const uploadLinkDesktop = document.getElementById('upload-link-desktop');
+            const uploadLinkMobile = document.getElementById('upload-link-mobile');
+
+            const user = JSON.parse(localStorage.getItem('loggedInUser'));
+
+            if (user && userProfileSection && authButtonsSection) {
+                userProfileSection.classList.remove('hidden');
+                userProfileSection.classList.add('flex'); // Ensure it's a flex container
+                authButtonsSection.classList.add('hidden');
+
+                if (usernameDisplay) usernameDisplay.textContent = user.username || 'ผู้ใช้';
+                if (fullnameDisplay) fullnameDisplay.textContent = user.fullname || 'ไม่ระบุชื่อ';
+                if (emailDisplay) emailDisplay.textContent = user.email || 'ไม่ระบุอีเมล';
+                if (mobileUsernameDisplay) mobileUsernameDisplay.textContent = user.username || 'ผู้ใช้';
+                if (mobileUserMenu) mobileUserMenu.classList.remove('hidden');
+
+                // Show upload links if logged in
+                if (uploadLinkDesktop) uploadLinkDesktop.classList.remove('hidden');
+                if (uploadLinkMobile) uploadLinkMobile.classList.remove('hidden');
+
+                return user; // Return user object if logged in
+            } else if (userProfileSection && authButtonsSection) {
+                userProfileSection.classList.add('hidden');
+                userProfileSection.classList.remove('flex');
+                authButtonsSection.classList.remove('hidden');
+
+                // Hide upload links if not logged in
+                if (uploadLinkDesktop) uploadLinkDesktop.classList.add('hidden');
+                if (uploadLinkMobile) uploadLinkMobile.classList.add('hidden');
+
+                return null; // Return null if not logged in
+            }
+            return null; // Default return
+        }
+
+        // Logout Function
+        function logout() {
+            localStorage.removeItem('loggedInUser');
+            showToast('Logged out successfully!', 'info');
+            checkLoginStatus(); // Update UI after logout
+            // Hide mobile menu if open
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu) mobileMenu.classList.add('hidden');
+            window.location.reload(); // Reload to clear any user-specific data
+        }
+
+        // Attach event listeners for auth forms
+        function attachAuthFormListeners() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', handleLogin);
+            }
+            if (registerForm) {
+                registerForm.addEventListener('submit', handleRegister);
+            }
+
+            // Mobile menu toggle
+            const menuButton = document.getElementById('menuButton');
+            const menuButtonLoggedIn = document.getElementById('menuButtonLoggedIn');
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            if (menuButton) {
+                menuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            if (menuButtonLoggedIn) {
+                menuButtonLoggedIn.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdowns = document.querySelectorAll('.dropdown');
+                dropdowns.forEach(dropdown => {
+                    if (!dropdown.contains(event.target)) {
+                        dropdown.classList.remove('active');
+                    }
+                });
+            });
+
+            // Toggle dropdown active class when dropdown button is clicked
+            const dropdownButtons = document.querySelectorAll('.dropdown > button');
+            dropdownButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.stopPropagation(); // Prevent immediate closing from document click
+                    this.closest('.dropdown').classList.toggle('active');
+                });
+            });
+
+            // Close modal when clicking outside (on the overlay)
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) {
+                        closeModal(modal.id);
+                    }
+                });
+            });
+        }
+
+        // *** END - Common JavaScript ***
+
+        // *** START - Page-specific JavaScript (previously in index.html) ***
+
+        let allResearches = []; // Stores all research data loaded from Google Sheet
+        const researchCardsContainer = document.getElementById('researchCards');
+        const searchInput = document.getElementById('searchInput');
+        const categorySelect = document.getElementById('categorySelect');
+        const yearSelect = document.getElementById('yearSelect');
+        const levelSelect = document.getElementById('levelSelect');
+        const searchButton = document.getElementById('searchButton');
+        const noResearchMessage = document.getElementById('noResearchMessage');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const featuredResearchContainer = document.getElementById('featuredResearchContainer');
+        const noFeaturedResearchMessage = document.getElementById('noFeaturedResearchMessage');
+
+        // Function to create HTML for a single research card
+        function createResearchCardHtml(research) {
+            const defaultImageUrl = 'https://via.placeholder.com/400x300?text=No+Image+Available';
+            const imageUrl = research.ImageUrl && research.ImageUrl !== '' ? research.ImageUrl : defaultImageUrl;
+
+            return `
+                <div class="research-card bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
+                    <a href="research-detail.html?id=${research.Id || research.ID}" class="block">
+                        <div class="image-container">
+                            <img src="${imageUrl}" alt="${research.Title}" class="w-full h-full object-cover">
+                        </div>
+                    </a>
+                    <div class="research-card-content flex flex-col justify-between flex-grow">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">${research.Title}</h3>
+                            <p class="text-sm text-gray-600 mb-1"><span class="font-medium">หมวดหมู่:</span> ${research.Category}</p>
+                            <p class="text-sm text-gray-600 mb-1"><span class="font-medium">ปี:</span> ${research.Year}</p>
+                            <p class="text-sm text-gray-600 mb-4"><span class="font-medium">ผู้แต่ง:</span> ${research.Authors}</p>
+                        </div>
+                        <div class="flex-grow-1">
+                            <a href="research-detail.html?id=${research.Id || research.ID}" class="block w-full text-center bg-orange-primary text-white py-2 rounded-md hover:bg-orange-secondary transition">
+                                ดูรายละเอียด
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to create HTML for the featured research card (can be similar or slightly different style)
+        function createFeaturedResearchCardHtml(research) {
+            // Using the same card style for consistency, but you can customize if needed
+            return createResearchCardHtml(research);
+        }
+
+        // Function to populate the year dropdown dynamically
+        function populateYears() {
+            const years = new Set();
+            allResearches.forEach(research => {
+                if (research.Year) {
+                    years.add(String(research.Year));
+                }
+            });
+            const sortedYears = Array.from(years).sort((a, b) => parseInt(b) - parseInt(a)); // Sort descending
+
+            yearSelect.innerHTML = '<option value="">-- เลือกปี --</option>';
+            sortedYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+        }
+
+        // Function to filter and display research cards
+        function filterResearches() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedCategory = categorySelect.value;
+            const selectedYear = yearSelect.value;
+            const selectedLevel = levelSelect.value;
+
+            const filtered = allResearches.filter(research => {
+                const matchesSearch = searchTerm === '' ||
+                                      (research.Title && research.Title.toLowerCase().includes(searchTerm)) ||
+                                      (research.Authors && research.Authors.toLowerCase().includes(searchTerm)) ||
+                                      (research.Abstract && research.Abstract.toLowerCase().includes(searchTerm));
+                const matchesCategory = selectedCategory === '' || (research.Category && research.Category === selectedCategory);
+                const matchesYear = selectedYear === '' || (research.Year && String(research.Year) === selectedYear);
+                const matchesLevel = selectedLevel === '' || (research.Level && research.Level === selectedLevel);
+                
+                return matchesSearch && matchesCategory && matchesYear && matchesLevel;
+            });
+
+            researchCardsContainer.innerHTML = '';
+            if (filtered.length > 0) {
+                filtered.forEach(research => {
+                    researchCardsContainer.innerHTML += createResearchCardHtml(research);
+                });
+                noResearchMessage.classList.add('hidden');
+            } else {
+                noResearchMessage.classList.remove('hidden');
+            }
+        }
+
+        // Fetch research data from Google Apps Script
+        async function loadApprovedResearch() {
+            loadingMessage.classList.remove('hidden');
+            researchCardsContainer.innerHTML = ''; // Clear existing cards
+            noResearchMessage.classList.add('hidden'); // Hide "no research" message initially
+
+            try {
+                // GOOGLE_APPS_SCRIPT_URL is defined in the common JavaScript section above
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST', // Use POST as per our combined Apps Script
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'getApprovedResearch' // Specific action for getting approved data
+                    }).toString()
+                });
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    allResearches = result.data;
+                    populateYears(); // Populate years after loading all data
+
+                    // Display all researches
+                    filterResearches(); // Call filter to display initially (with empty filters)
+
+                    // Display featured researches (e.g., first 3, or randomly selected)
+                    featuredResearchContainer.innerHTML = '';
+                    const featured = allResearches.slice(0, 3); // Example: show first 3
+                    if (featured.length > 0) {
+                        featured.forEach(research => {
+                            featuredResearchContainer.innerHTML += createFeaturedResearchCardHtml(research);
+                        });
+                        noFeaturedResearchMessage.classList.add('hidden');
+                    } else {
+                        noFeaturedResearchMessage.classList.remove('hidden');
+                    }
+
+                    if (allResearches.length === 0) {
+                        noResearchMessage.classList.remove('hidden');
+                    }
+
+                } else {
+                    showToast(result.message || 'ไม่สามารถโหลดข้อมูลงานวิจัยได้', 'error');
+                    noResearchMessage.classList.remove('hidden');
+                    noResearchMessage.textContent = result.message || 'ไม่สามารถโหลดข้อมูลงานวิจัยได้';
+                }
+            } finally {
+                loadingMessage.classList.add('hidden');
+            }
+        }
+
+        // Event listeners for search and filter
+        searchButton.addEventListener('click', filterResearches);
+        searchInput.addEventListener('input', filterResearches); // Filter as user types
+        categorySelect.addEventListener('change', filterResearches);
+        yearSelect.addEventListener('change', filterResearches);
+        levelSelect.addEventListener('change', filterResearches);
+
+        // Initial load on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatus(); // Call checkLoginStatus
+            attachAuthFormListeners(); // Call function to attach event listeners to auth forms and mobile menu
+            loadApprovedResearch(); // Load research data
+        });
+
+        // *** END - Page-specific JavaScript ***
+    </script>
+</body>
+</html>
